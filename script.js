@@ -12,17 +12,26 @@ const inputElevation = document.querySelector('.form__input--elevation');
 class App {
   #map;
   #mapEvent;
-  #workouts;
+  #workouts = [];
   #coord;
   #mapZoom = 15;
-  static id = 1;
 
   constructor() {
     this._getGeoCoords();
     inputType.addEventListener('change', this._toggleInput);
     form.addEventListener('submit', this._newWorkout.bind(this));
-    this.#workouts = [];
     containerWorkouts.addEventListener('click', this._moveMap.bind(this));
+  }
+
+  _getWorkouts() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    if (!data) return;
+  
+    data.forEach(work => {
+      this._renderWorkout(work);
+      this._createMarker(work);
+    });
+    this.#workouts = data;
   }
 
   _getGeoCoords() {
@@ -43,13 +52,15 @@ class App {
     }).addTo(this.#map);
 
     this.#map.on('click', this._showForm.bind(this));
+    this._getWorkouts();
   }
 
   _moveMap(e) {
     const workoutId = e.target.closest('.workout')?.dataset.id;
     if (!workoutId) return;
-    
-    const workout = this.#workouts.find(work => work.id === workoutId);
+
+    const workout = this.#workouts.find(work => work.id === +workoutId);
+
     this.#map.setView(workout.coords, this.#mapZoom, {
       animate: true,
       pan: {
@@ -73,7 +84,7 @@ class App {
     const [beginLat, beginLng] = this.#coord;
     const latDiff = Math.abs(beginLat - lat);
     const lngDiff = Math.abs(beginLng - lng);
-    return ((latDiff**2 + lngDiff**2)**0.5 * 111.3).toFixed(2);
+    return ((latDiff ** 2 + lngDiff ** 2) ** 0.5 * 111.3).toFixed(2);
   }
 
   _newWorkout(e) {
@@ -114,6 +125,7 @@ class App {
     this._createMarker(workout);
     this.#workouts.push(workout);
     this._renderWorkout(workout);
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
     this._resetForm();
   }
 
@@ -187,15 +199,16 @@ class App {
     form.insertAdjacentHTML('afterend', html);
   }
 
-  static createID() {
-    return `${this.id++}`.padStart(10, 0);
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
   }
 }
 
 const app = new App();
 
 class Workout {
-  id = App.createID();
+  id = new Date().getTime();
   date = new Date();
   constructor(duration, distance, coords) {
     this.duration = duration;
