@@ -14,6 +14,7 @@ const inputElevation = document.querySelector('.form__input--elevation');
 class App {
   #map;
   #mapEvent;
+  static id = 1;
 
   constructor() {
     this._getGeoCoords();
@@ -23,7 +24,7 @@ class App {
 
   _getGeoCoords() {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(this._loadMap.bind(this), (err) => {
+      navigator.geolocation.getCurrentPosition(this._loadMap.bind(this), () => {
         alert('Geo error');
       });
     }
@@ -43,6 +44,7 @@ class App {
 
   _showForm(e) {
     this.#mapEvent = e;
+    console.log(e);
     form.classList.remove('hidden');
     inputDistance.focus();
   }
@@ -75,6 +77,46 @@ class App {
     inputType.value = 'running';
     form.classList.add('hidden');
   }
+
+  static createID() {
+    return `${this.id++}`.padStart(10, 0);
+  }
 }
 
 const app = new App();
+
+class Workout {
+  id = App.createID(); 
+  date = new Date();
+  constructor(duration, distance, coords) {
+    this.duration = duration;
+    this.distance = distance;
+    this.coords = coords;
+  }
+}
+
+class Running extends Workout {
+  constructor(duration, distance, coords, cadence) {
+    super(duration, distance, coords);
+    this.cadence = cadence;
+    this.calcPace();
+  }
+
+  calcPace() {
+    this.pace = this.duration / this.distance;
+    return this.pace;
+  }
+}
+
+class Cycling extends Workout {
+  constructor(duration, distance, coords, elevationGain) {
+    super(duration, distance, coords);
+    this.elevationGain = elevationGain;
+    this.calcSpeed();
+  }
+
+  calcSpeed() {
+    this.speed = this.distance / this.duration / 60;
+    return this.speed;
+  }
+}
