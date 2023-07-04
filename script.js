@@ -14,6 +14,7 @@ class App {
   #mapEvent;
   #workouts;
   #coord;
+  #mapZoom = 15;
   static id = 1;
 
   constructor() {
@@ -21,6 +22,7 @@ class App {
     inputType.addEventListener('change', this._toggleInput);
     form.addEventListener('submit', this._newWorkout.bind(this));
     this.#workouts = [];
+    containerWorkouts.addEventListener('click', this._moveMap.bind(this));
   }
 
   _getGeoCoords() {
@@ -34,13 +36,26 @@ class App {
   _loadMap(pos) {
     const coords = this.#coord = [pos.coords.latitude, pos.coords.longitude];
 
-    this.#map = L.map('map').setView(coords, 15);
+    this.#map = L.map('map').setView(coords, this.#mapZoom);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(this.#map);
 
     this.#map.on('click', this._showForm.bind(this));
+  }
+
+  _moveMap(e) {
+    const workoutId = e.target.closest('.workout')?.dataset.id;
+    if (!workoutId) return;
+    
+    const workout = this.#workouts.find(work => work.id === workoutId);
+    this.#map.setView(workout.coords, this.#mapZoom, {
+      animate: true,
+      pan: {
+        duration: 0.5
+      }
+    });
   }
 
   _showForm(e) {
